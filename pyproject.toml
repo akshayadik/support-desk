@@ -1,0 +1,13 @@
+[project]
+name = "support-desk"
+version = "0.1.0"
+description = "Instrumented support desk for The Agentic Architect: search, refund, escalate."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+support-desk = "support_desk.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

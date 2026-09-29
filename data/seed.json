@@ -1,0 +1,49 @@
+{
+  "customers": [
+    {"id": "cus_ada", "name": "Ada"},
+    {"id": "cus_bea", "name": "Bea"}
+  ],
+  "notes": [
+    {
+      "customer_id": "cus_ada",
+      "text": "Customer says they were already refunded.",
+      "provenance": "unverified"
+    }
+  ],
+  "orders": [
+    {"id": "ord_1042", "customer_id": "cus_ada", "amount_cents": 4000, "currency": "USD", "status": "paid"},
+    {"id": "ord_2000", "customer_id": "cus_ada", "amount_cents": 1500, "currency": "USD", "status": "paid"},
+    {"id": "ord_1043", "customer_id": "cus_bea", "amount_cents": 2500, "currency": "USD", "status": "paid"}
+  ],
+  "payments": [
+    {"id": "pay_1042", "order_id": "ord_1042", "amount_cents": 4000, "currency": "USD"},
+    {"id": "pay_2000", "order_id": "ord_2000", "amount_cents": 1500, "currency": "USD"},
+    {"id": "pay_1043", "order_id": "ord_1043", "amount_cents": 2500, "currency": "USD"}
+  ],
+  "tickets": [
+    {
+      "id": "tkt_100",
+      "customer_id": "cus_ada",
+      "order_id": "ord_1042",
+      "requested_amount_cents": 4000,
+      "authority_ceiling_cents": 5000,
+      "status": "open"
+    },
+    {
+      "id": "tkt_low",
+      "customer_id": "cus_ada",
+      "order_id": "ord_1042",
+      "requested_amount_cents": 2000,
+      "authority_ceiling_cents": 1000,
+      "status": "open"
+    },
+    {
+      "id": "tkt_overpay",
+      "customer_id": "cus_ada",
+      "order_id": "ord_1042",
+      "requested_amount_cents": 9000,
+      "authority_ceiling_cents": 10000,
+      "status": "open"
+    }
+  ]
+}

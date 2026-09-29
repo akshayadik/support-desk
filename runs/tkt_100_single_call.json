@@ -1,0 +1,46 @@
+{
+  "run_id": "run_single_call_tkt_100",
+  "mode": "single_call",
+  "ticket_id": "tkt_100",
+  "actor": "support-agent",
+  "started_at": "2026-09-28T00:00:00Z",
+  "ceilings": {
+    "authority_cents": 5000,
+    "max_steps": 1
+  },
+  "tool_calls": [
+    {
+      "tool": "refund",
+      "arguments": {
+        "order_id": "ord_1042",
+        "amount_cents": 4000,
+        "idempotency_key": "refund:tkt_100"
+      },
+      "receipt": {
+        "refund_id": "ref_0001",
+        "denial_reason": null,
+        "idempotency_key": "refund:tkt_100",
+        "amount_cents": 4000,
+        "currency": "USD",
+        "order_id": "ord_1042",
+        "ticket_id": "tkt_100",
+        "actor": "support-agent"
+      }
+    }
+  ],
+  "final_outcome": {
+    "kind": "refunded",
+    "tool": "refund",
+    "receipt": {
+      "refund_id": "ref_0001",
+      "denial_reason": null,
+      "idempotency_key": "refund:tkt_100",
+      "amount_cents": 4000,
+      "currency": "USD",
+      "order_id": "ord_1042",
+      "ticket_id": "tkt_100",
+      "actor": "support-agent"
+    }
+  },
+  "summary": "Refund the order."
+}
