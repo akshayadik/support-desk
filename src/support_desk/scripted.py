@@ -11,7 +11,6 @@ class ScriptedSingleCallModel:
             arguments={
                 "order_id": ticket["order_id"],
                 "amount_cents": ticket["requested_amount_cents"],
-                "idempotency_key": f"refund:{ticket['id']}",
             },
             text="Refund the order.",
             done=False,
@@ -31,6 +30,13 @@ class ScriptedSummarizer:
         else:
             text = "Summary only. No closing receipt."
         return ModelTurn(tool_name=None, arguments={}, text=text, done=True)
+
+
+class ScriptedDoneFirst:
+    """Says Done before any tool. The sentence is narration. It is not a refund."""
+
+    def respond(self, observation):
+        return ModelTurn(tool_name=None, arguments={}, text="Done.", done=True)
 
 
 class ScriptedSupportModel:
@@ -53,7 +59,6 @@ class ScriptedSupportModel:
             arguments={
                 "order_id": ticket["order_id"],
                 "amount_cents": ticket["requested_amount_cents"],
-                "idempotency_key": f"refund:{ticket['id']}",
             },
             text="",
             done=False,

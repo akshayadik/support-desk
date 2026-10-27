@@ -5,7 +5,12 @@ from pathlib import Path
 
 from support_desk.desk import Desk
 from support_desk.modes import run_agent, run_side_by_side, run_single_call, run_workflow
-from support_desk.scripted import ScriptedSingleCallModel, ScriptedSummarizer, ScriptedSupportModel
+from support_desk.scripted import (
+    ScriptedDoneFirst,
+    ScriptedSingleCallModel,
+    ScriptedSummarizer,
+    ScriptedSupportModel,
+)
 
 
 def main(argv=None):
@@ -16,7 +21,7 @@ def main(argv=None):
     parser.add_argument("--actor", default="support-agent")
     parser.add_argument(
         "--mode",
-        choices=["single_call", "workflow", "agent", "all"],
+        choices=["single_call", "workflow", "agent", "ghost", "all"],
         default="all",
     )
     parser.add_argument("--now", default=None)
@@ -25,13 +30,29 @@ def main(argv=None):
     clock = _clock(args.now)
     seed = json.loads(args.seed.read_text())
     args.out.mkdir(parents=True, exist_ok=True)
-    logs = _run(args, seed, clock)
-    for log in logs:
-        destination = args.out / f"{log['ticket_id']}_{log['mode']}.json"
+    if args.mode == "ghost":
+        desk = Desk.create(args.out / f"{args.ticket}_ghost.sqlite", seed, clock)
+        logs = [
+            run_agent(
+                desk,
+                args.ticket,
+                args.actor,
+                ScriptedDoneFirst(),
+                max_steps=6,
+                run_label="ghost",
+            )
+        ]
+        destinations = [args.out / f"{args.ticket}_ghost.json"]
+    else:
+        logs = _run(args, seed, clock)
+        destinations = [
+            args.out / f"{log['ticket_id']}_{log['mode']}.json" for log in logs
+        ]
+    for log, destination in zip(logs, destinations):
         destination.write_text(json.dumps(log, indent=2) + "\n")
         receipt = log["final_outcome"]["receipt"] or {}
         proof = receipt.get("refund_id") or receipt.get("handoff_ticket_id") or receipt.get("rejection_reason")
-        print(f"{log['mode']}: {log['final_outcome']['kind']} {proof}")
+        print(f"{destination.name}: {log['final_outcome']['kind']} {proof}")
     return 0
 
 

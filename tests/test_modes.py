@@ -5,7 +5,12 @@ from support_desk.cli import main
 from support_desk.desk import Desk
 from support_desk.model import ModelTurn
 from support_desk.modes import run_agent, run_side_by_side, run_single_call, run_workflow
-from support_desk.scripted import ScriptedSingleCallModel, ScriptedSummarizer, ScriptedSupportModel
+from support_desk.scripted import (
+    ScriptedDoneFirst,
+    ScriptedSingleCallModel,
+    ScriptedSummarizer,
+    ScriptedSupportModel,
+)
 
 from conftest import NOW, ROOT, SEED
 
@@ -98,6 +103,25 @@ def test_agent_searches_then_refunds_under_the_step_ceiling(desk):
     assert log["final_outcome"]["kind"] == "refunded"
     assert log["actor"] == "support-agent"
     assert log["ticket_id"] == "tkt_100"
+
+
+def test_agent_done_with_no_tool_leaves_the_refund_unpaid(desk):
+    log = run_agent(
+        desk,
+        ticket_id="tkt_100",
+        actor="support-agent",
+        model=ScriptedDoneFirst(),
+        max_steps=6,
+    )
+
+    assert log["tool_calls"] == []
+    assert log["summary"] == "Done."
+    assert log["final_outcome"]["kind"] == "incomplete"
+    assert log["final_outcome"]["receipt"] is None
+    assert log["actor"] == "support-agent"
+    assert log["ticket_id"] == "tkt_100"
+    assert desk.refunded_cents("ord_1042") == 0
+    assert desk.ticket("tkt_100")["status"] == "open"
 
 
 def test_agent_records_an_unknown_tool_and_does_not_run_it(desk):
@@ -243,3 +267,61 @@ def test_cli_rerun_replaces_the_previous_ledger(tmp_path):
         total = conn.execute("SELECT COALESCE(SUM(amount_cents), 0) FROM refunds").fetchone()[0]
         conn.close()
         assert total == 4000
+
+
+class RetryKeyModel:
+    """Proposes a fresh key on every refund, as a live model might. Two refunds, then stops."""
+
+    def respond(self, observation):
+        ticket = observation["ticket"]
+        steps = observation["steps_taken"]
+        if steps >= 2:
+            return ModelTurn(None, {}, "Done.", True)
+        return ModelTurn(
+            tool_name="refund",
+            arguments={
+                "order_id": ticket["order_id"],
+                "amount_cents": ticket["requested_amount_cents"],
+                "idempotency_key": f"refund:{ticket['id']}:attempt{steps}",
+            },
+            text="",
+            done=False,
+        )
+
+
+def test_harness_mints_the_idempotency_key_and_ignores_the_models(desk):
+    log = run_agent(
+        desk,
+        ticket_id="tkt_100",
+        actor="support-agent",
+        model=RetryKeyModel(),
+        max_steps=6,
+    )
+
+    calls = log["tool_calls"]
+    assert [call["tool"] for call in calls] == ["refund", "refund"]
+    assert [call["arguments"]["idempotency_key"] for call in calls] == ["refund:tkt_100"] * 2
+    assert [call["proposed_idempotency_key"] for call in calls] == [
+        "refund:tkt_100:attempt0",
+        "refund:tkt_100:attempt1",
+    ]
+    assert calls[0]["receipt"]["refund_id"] == calls[1]["receipt"]["refund_id"] == "ref_0001"
+    assert desk.refunded_cents("ord_1042") == 4000
+
+
+def test_ghost_run_gets_its_own_run_id(tmp_path):
+    """The ghost run is an agent-mode run on the same ticket. Its id must not
+    collide with the agent log it is read against."""
+    out = tmp_path / "runs"
+    base = ["--seed", str(ROOT / "data" / "seed.json"), "--out", str(out), "--ticket", "tkt_100", "--now", NOW]
+
+    assert main(base + ["--mode", "agent"]) == 0
+    assert main(base + ["--mode", "ghost"]) == 0
+
+    agent = json.loads((out / "tkt_100_agent.json").read_text())
+    ghost = json.loads((out / "tkt_100_ghost.json").read_text())
+    assert agent["run_id"] == "run_agent_tkt_100"
+    assert ghost["run_id"] == "run_agent_tkt_100_ghost"
+    assert ghost["mode"] == "agent"
+    assert ghost["tool_calls"] == []
+    assert ghost["final_outcome"]["kind"] == "incomplete"

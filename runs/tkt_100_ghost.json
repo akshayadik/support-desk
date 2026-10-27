@@ -1,0 +1,18 @@
+{
+  "run_id": "run_agent_tkt_100_ghost",
+  "mode": "agent",
+  "ticket_id": "tkt_100",
+  "actor": "support-agent",
+  "started_at": "2026-10-22T11:18:59Z",
+  "ceilings": {
+    "authority_cents": 5000,
+    "max_steps": 6
+  },
+  "tool_calls": [],
+  "final_outcome": {
+    "kind": "incomplete",
+    "tool": null,
+    "receipt": null
+  },
+  "summary": "Done."
+}

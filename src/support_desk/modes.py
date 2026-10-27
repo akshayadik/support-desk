@@ -10,13 +10,20 @@ _SCHEMAS = {
     "refund": {
         "order_id": str,
         "amount_cents": int,
-        "idempotency_key": (str, type(None)),
     },
     "escalate": {
         "reason": str,
-        "idempotency_key": (str, type(None)),
     },
 }
+
+# Tools whose writes are deduplicated by a key. The harness mints the key from
+# the ticket; the model never does. A key the model proposes is recorded and
+# ignored, so a live model cannot defeat Reversible by naming a fresh attempt.
+_KEYED_TOOLS = ("refund", "escalate")
+
+
+def _mint_key(tool_name, ticket_id):
+    return f"{tool_name}:{ticket_id}"
 
 
 def run_single_call(desk, ticket_id, actor, model):
@@ -46,7 +53,6 @@ def run_workflow(desk, ticket_id, actor, model):
             {
                 "order_id": ticket["order_id"],
                 "amount_cents": ticket["requested_amount_cents"],
-                "idempotency_key": f"refund:{ticket_id}",
             },
         )
     else:
@@ -56,15 +62,17 @@ def run_workflow(desk, ticket_id, actor, model):
             actor,
             ticket_id,
             "escalate",
-            {"reason": reason, "idempotency_key": f"escalate:{ticket_id}"},
+            {"reason": reason},
         )
     summary = model.respond(_observation(log, ticket)).text
     return _finish(log, summary)
 
 
-def run_agent(desk, ticket_id, actor, model, max_steps):
+def run_agent(desk, ticket_id, actor, model, max_steps, run_label=None):
     ticket = desk.ticket(ticket_id)
-    log = _blank_log(desk, "agent", ticket_id, actor, ticket, max_steps=max_steps)
+    log = _blank_log(
+        desk, "agent", ticket_id, actor, ticket, max_steps=max_steps, run_label=run_label
+    )
     summary = ""
     while len(log["tool_calls"]) < max_steps:
         turn = model.respond(_observation(log, ticket))
@@ -125,6 +133,10 @@ def _execute(desk, actor, ticket_id, tool_name, arguments):
             "arguments": dict(arguments),
             "receipt": {"rejection_reason": "unknown tool", "accepted": False},
         }
+    proposed_key = None
+    if tool_name in _KEYED_TOOLS:
+        proposed_key = arguments.get("idempotency_key")
+        arguments = {k: v for k, v in arguments.items() if k != "idempotency_key"}
     for field, expected in _SCHEMAS[tool_name].items():
         if field not in arguments or not isinstance(arguments[field], expected):
             return {
@@ -135,6 +147,8 @@ def _execute(desk, actor, ticket_id, tool_name, arguments):
                     "accepted": False,
                 },
             }
+    if tool_name in _KEYED_TOOLS:
+        arguments = {**arguments, "idempotency_key": _mint_key(tool_name, ticket_id)}
     if tool_name == "search":
         receipt = desk.search(ticket_id=ticket_id, actor=actor, query=arguments["query"])
     elif tool_name == "refund":
@@ -152,13 +166,21 @@ def _execute(desk, actor, ticket_id, tool_name, arguments):
             reason=arguments["reason"],
             idempotency_key=arguments["idempotency_key"],
         )
-    return {"tool": tool_name, "arguments": dict(arguments), "receipt": asdict(receipt)}
+    call = {"tool": tool_name, "arguments": dict(arguments), "receipt": asdict(receipt)}
+    if proposed_key is not None and proposed_key != arguments["idempotency_key"]:
+        call["proposed_idempotency_key"] = proposed_key
+    return call
 
 
-def _blank_log(desk, mode, ticket_id, actor, ticket, max_steps):
+def _blank_log(desk, mode, ticket_id, actor, ticket, max_steps, run_label=None):
+    # The run id names the run, not the model. The operator may label a run so
+    # that two runs of the same mode on the same ticket keep distinct ids.
     authority = None if ticket is None else ticket["authority_ceiling_cents"]
+    run_id = f"run_{mode}_{ticket_id}"
+    if run_label:
+        run_id = f"{run_id}_{run_label}"
     return {
-        "run_id": f"run_{mode}_{ticket_id}",
+        "run_id": run_id,
         "mode": mode,
         "ticket_id": ticket_id,
         "actor": actor,

@@ -15,6 +15,12 @@ PYTHONPATH=src python3 -m support_desk --mode all --now 2026-09-28T00:00:00Z
 
 That writes `runs/tkt_100_single_call.json`, `runs/tkt_100_workflow.json`, and `runs/tkt_100_agent.json`, plus a sqlite ledger beside each one.
 
+The quiet run is separate. It uses the agent loop and a stand-in that says "Done." before any tool, and it writes `runs/tkt_100_ghost.json` under the run id `run_agent_tkt_100_ghost`. It does not replace the agent log, whose id is `run_agent_tkt_100`.
+
+```bash
+PYTHONPATH=src python3 -m support_desk --mode ghost --now 2026-10-22T11:18:59Z
+```
+
 ```bash
 PYTHONPATH=src python3 -m pytest
 ```
