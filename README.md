@@ -21,6 +21,16 @@ The quiet run is separate. It uses the agent loop and a stand-in that says "Done
 PYTHONPATH=src python3 -m support_desk --mode ghost --now 2026-10-22T11:18:59Z
 ```
 
+The live seat puts a real model where the stand-in sits. The harness is unchanged:
+it mints the key, gates the schema, and closes on the receipt. Each run gets a fresh
+desk and its own run id (`run_agent_tkt_100_live_NN`). Needs `pip install anthropic`
+and a credential the SDK can find. Every run spends money.
+
+```
+PYTHONPATH=src python3 -m support_desk --mode live --runs 20
+# writes runs/live/tkt_100_live_NN.json, .turns.json (raw replies), config.json, summary.md
+```
+
 ```bash
 PYTHONPATH=src python3 -m pytest
 ```

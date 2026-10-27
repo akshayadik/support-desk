@@ -5,6 +5,9 @@ description = "Instrumented support desk for The Agentic Architect: search, refu
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+live = ["anthropic>=1.5"]
+
 [project.scripts]
 support-desk = "support_desk.cli:main"
 

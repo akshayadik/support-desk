@@ -21,10 +21,13 @@ def main(argv=None):
     parser.add_argument("--actor", default="support-agent")
     parser.add_argument(
         "--mode",
-        choices=["single_call", "workflow", "agent", "ghost", "all"],
+        choices=["single_call", "workflow", "agent", "ghost", "live", "all"],
         default="all",
     )
     parser.add_argument("--now", default=None)
+    parser.add_argument("--runs", type=int, default=20, help="live mode: how many runs")
+    parser.add_argument("--live-model", default=None, help="live mode: model id")
+    parser.add_argument("--effort", default=None, help="live mode: low|medium|high|xhigh|max")
     args = parser.parse_args(argv)
 
     clock = _clock(args.now)
@@ -43,6 +46,8 @@ def main(argv=None):
             )
         ]
         destinations = [args.out / f"{args.ticket}_ghost.json"]
+    elif args.mode == "live":
+        logs, destinations = _run_live(args, seed, clock)
     else:
         logs = _run(args, seed, clock)
         destinations = [
@@ -54,6 +59,33 @@ def main(argv=None):
         proof = receipt.get("refund_id") or receipt.get("handoff_ticket_id") or receipt.get("rejection_reason")
         print(f"{destination.name}: {log['final_outcome']['kind']} {proof}")
     return 0
+
+
+def _run_live(args, seed, clock):
+    """N live-model runs on one ticket, each on a fresh desk, with a table beside them."""
+    from support_desk.live import DEFAULT_EFFORT, DEFAULT_MODEL, LiveSupportModel, describe, summary_row, summary_table
+
+    model_id = args.live_model or DEFAULT_MODEL
+    effort = args.effort or DEFAULT_EFFORT
+    live_dir = args.out / "live"
+    live_dir.mkdir(parents=True, exist_ok=True)
+    (live_dir / "config.json").write_text(json.dumps(describe(model_id, effort), indent=2) + "\n")
+    logs, destinations, rows = [], [], []
+    for number in range(1, args.runs + 1):
+        label = f"live_{number:02d}"
+        desk = Desk.create(
+            live_dir / f"{args.ticket}_{label}.sqlite", json.loads(json.dumps(seed)), clock
+        )
+        model = LiveSupportModel(model=model_id, effort=effort)
+        log = run_agent(desk, args.ticket, args.actor, model, max_steps=6, run_label=label)
+        (live_dir / f"{args.ticket}_{label}.turns.json").write_text(
+            json.dumps(model.turns, indent=2) + "\n"
+        )
+        logs.append(log)
+        destinations.append(live_dir / f"{args.ticket}_{label}.json")
+        rows.append(summary_row(number, log, desk))
+    (live_dir / "summary.md").write_text(summary_table(rows))
+    return logs, destinations
 
 
 def _clock(now):
