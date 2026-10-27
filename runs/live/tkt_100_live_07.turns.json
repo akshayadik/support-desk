@@ -1,0 +1,44 @@
+[
+  {
+    "step": 0,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "tool_use",
+    "text": "First I'll look up the order to check that it exists and see how much was paid.",
+    "tool_uses": [
+      {
+        "name": "search",
+        "input": {
+          "query": "ord_1042"
+        }
+      }
+    ],
+    "input_tokens": 1027,
+    "output_tokens": 70
+  },
+  {
+    "step": 1,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "tool_use",
+    "text": "",
+    "tool_uses": [
+      {
+        "name": "refund",
+        "input": {
+          "order_id": "ord_1042",
+          "amount_cents": 4000
+        }
+      }
+    ],
+    "input_tokens": 1191,
+    "output_tokens": 128
+  },
+  {
+    "step": 2,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "end_turn",
+    "text": "Ticket tkt_100 is done: receipt ref_0001 shows a refund of 4000 cents (USD) on order ord_1042, which is the full amount paid and below the 5000-cent authority ceiling.",
+    "tool_uses": [],
+    "input_tokens": 1308,
+    "output_tokens": 121
+  }
+]

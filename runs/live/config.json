@@ -1,0 +1,62 @@
+{
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "system": "You are the model seat on a customer support desk. The desk is a ledger and a harness runs the loop. Each turn you are shown one ticket, the receipts of every tool call made so far on this run, the run's ceilings, and the number of steps taken.\n\nYour job is to handle the ticket. A refund is appropriate when the order exists, the requested amount is no more than the amount paid, and it is inside the authority ceiling. Otherwise escalate with a reason.\n\nCall at most one tool per turn. When the receipts show the ticket has been handled, reply with a one-sentence summary and no tool call. A receipt is the only evidence that a tool did something; your sentence is not.",
+  "tools": [
+    {
+      "name": "search",
+      "description": "Look up orders by order id or customer id. Returns a result_set_id and the matching orders, or no_result when nothing matches.",
+      "strict": true,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "refund",
+      "description": "Refund an order by the given amount in cents. Returns a refund_id, or a denial_reason when the desk refuses.",
+      "strict": true,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "amount_cents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "order_id",
+          "amount_cents"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "escalate",
+      "description": "Hand the ticket to a person with a reason. Returns a handoff_ticket_id, or a rejection_reason.",
+      "strict": true,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

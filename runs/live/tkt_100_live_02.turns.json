@@ -1,0 +1,44 @@
+[
+  {
+    "step": 0,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "tool_use",
+    "text": "Before I refund, I need to check that the order exists and see how much was paid.",
+    "tool_uses": [
+      {
+        "name": "search",
+        "input": {
+          "query": "ord_1042"
+        }
+      }
+    ],
+    "input_tokens": 1027,
+    "output_tokens": 71
+  },
+  {
+    "step": 1,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "tool_use",
+    "text": "",
+    "tool_uses": [
+      {
+        "name": "refund",
+        "input": {
+          "order_id": "ord_1042",
+          "amount_cents": 4000
+        }
+      }
+    ],
+    "input_tokens": 1191,
+    "output_tokens": 128
+  },
+  {
+    "step": 2,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "end_turn",
+    "text": "I refunded ticket tkt_100 in full: $40.00 (4000 cents) on order ord_1042, which matches what was paid and is under the $50.00 limit, as shown by receipt ref_0001.",
+    "tool_uses": [],
+    "input_tokens": 1308,
+    "output_tokens": 120
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "run_id": "run_agent_tkt_100_live_09",
+  "mode": "agent",
+  "ticket_id": "tkt_100",
+  "actor": "support-agent",
+  "started_at": "2026-10-27T11:11:25Z",
+  "ceilings": {
+    "authority_cents": 5000,
+    "max_steps": 6
+  },
+  "tool_calls": [
+    {
+      "tool": "search",
+      "arguments": {
+        "query": "ord_1042"
+      },
+      "receipt": {
+        "query": "ord_1042",
+        "result_set_id": "rs_0001",
+        "no_result": false,
+        "rejection_reason": null,
+        "hits": [
+          {
+            "order_id": "ord_1042",
+            "amount_cents": 4000,
+            "currency": "USD",
+            "status": "paid",
+            "customer_id": "cus_ada"
+          }
+        ],
+        "actor": "support-agent",
+        "ticket_id": "tkt_100"
+      }
+    },
+    {
+      "tool": "refund",
+      "arguments": {
+        "order_id": "ord_1042",
+        "amount_cents": 4000,
+        "idempotency_key": "refund:tkt_100"
+      },
+      "receipt": {
+        "refund_id": "ref_0001",
+        "denial_reason": null,
+        "idempotency_key": "refund:tkt_100",
+        "amount_cents": 4000,
+        "currency": "USD",
+        "order_id": "ord_1042",
+        "ticket_id": "tkt_100",
+        "actor": "support-agent"
+      }
+    }
+  ],
+  "final_outcome": {
+    "kind": "refunded",
+    "tool": "refund",
+    "receipt": {
+      "refund_id": "ref_0001",
+      "denial_reason": null,
+      "idempotency_key": "refund:tkt_100",
+      "amount_cents": 4000,
+      "currency": "USD",
+      "order_id": "ord_1042",
+      "ticket_id": "tkt_100",
+      "actor": "support-agent"
+    }
+  },
+  "summary": "I refunded the full $40.00 USD on order ord_1042 for ticket tkt_100 (refund receipt ref_0001), since the order is paid, the refund matches what the customer paid and it's within the $50.00 limit."
+}

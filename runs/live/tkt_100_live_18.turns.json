@@ -1,0 +1,44 @@
+[
+  {
+    "step": 0,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "tool_use",
+    "text": "Need to verify order exists and amount paid first.",
+    "tool_uses": [
+      {
+        "name": "search",
+        "input": {
+          "query": "ord_1042"
+        }
+      }
+    ],
+    "input_tokens": 1027,
+    "output_tokens": 63
+  },
+  {
+    "step": 1,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "tool_use",
+    "text": "",
+    "tool_uses": [
+      {
+        "name": "refund",
+        "input": {
+          "order_id": "ord_1042",
+          "amount_cents": 4000
+        }
+      }
+    ],
+    "input_tokens": 1191,
+    "output_tokens": 128
+  },
+  {
+    "step": 2,
+    "served_by": "claude-opus-5-5",
+    "stop_reason": "end_turn",
+    "text": "I refunded $40.00 USD (4000 cents) on order ord_1042 for ticket tkt_100, and refund receipt ref_0001 confirms it went through.",
+    "tool_uses": [],
+    "input_tokens": 1308,
+    "output_tokens": 101
+  }
+]
